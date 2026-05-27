@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aurora by Develoi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="topbar">
+    <div class="brand-block">
+      <div class="brand-mark">A</div>
+      <div>
+        <div class="brand-name">Aurora <span class="brand-by">by Develoi</span></div>
+        <div class="brand-sub">Transcrição, IA local e voz no mesmo painel</div>
+      </div>
+    </div>
+
+    <div class="status-pills">
+      <div class="pill">
+        <span class="pill-dot loading" id="apiDot"></span>
+        <strong id="apiStatus">Carregando</strong>
+      </div>
+      <div class="pill">
+        <span class="pill-dot" id="whisperDot" style="display:none"></span>
+        <span id="whisperModel" style="display:none"></span>
+      </div>
+      <div class="pill">
+        <span class="pill-dot loading" id="ollamaDot"></span>
+        <span>IA</span>
+        <strong id="ollamaModel">—</strong>
+      </div>
+      <div class="pill" style="display:none">
+        <span class="pill-dot" id="modelDot"></span>
+        <strong id="ollamaStatus"></strong>
+      </div>
+      <div class="pill">
+        <span class="pill-dot loading" id="ttsDot"></span>
+        <span>Voz</span>
+        <strong id="ttsStatus">Verificando</strong>
+      </div>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <section class="chat-panel">
+      <div class="panel-header">
+        <div class="aurora-header">
+          <div class="aurora-avatar">A</div>
+          <div>
+            <div class="panel-title">Aurora <span class="brand-by">by Develoi</span></div>
+            <div class="panel-sub">Ctrl+Enter para enviar · resposta normal ou com áudio</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="icon-btn" id="settingsToggle" title="Configurações do chat">⚙</button>
+          <button class="icon-btn" id="clearChatButton" title="Nova conversa">✕</button>
+        </div>
+      </div>
+
+      <div class="chat-settings-bar" id="chatSettingsBar">
+        <input id="chatModelInput" type="hidden">
+        <div class="field" style="flex:1">
+          <span class="field-label">Instrução do sistema</span>
+          <input id="systemPromptInput" type="text" value="Responda em português do Brasil, com clareza e objetividade.">
+        </div>
+        <div class="field">
+          <span class="field-label">Voz da resposta</span>
+          <select id="chatVoiceSelect">
+            <option>Carregando vozes...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="chat-stream" id="chatStream">
+        <div class="empty-state">
+          <div class="empty-icon">IA</div>
+          <strong>Nenhuma mensagem ainda</strong>
+          <span>Envie uma pergunta ou use a transcrição como contexto.</span>
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="composer-row">
+          <textarea id="chatInput" rows="2" placeholder="Digite sua mensagem…"></textarea>
+          <div class="composer-btns">
+            <button class="btn btn-secondary" id="useTranscriptButton" title="Usar transcrição">Transcrição</button>
+            <button class="btn btn-secondary" id="sendChatVoiceButton">Enviar + voz</button>
+            <button class="btn btn-primary" id="sendChatButton">Enviar</button>
+          </div>
+        </div>
+        <div class=”composer-hint”>Ctrl+Enter para enviar · “Enviar + voz” gera resposta com áudio</div>
+      </div>
+    </section>
+
+    <aside class="right-panel">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="audio">Áudio</button>
+        <button class="tab-btn" data-tab="analysis">Análise</button>
+        <button class="tab-btn" data-tab="voice">Voz</button>
+      </div>
+
+      <div class="tab-content active" id="tab-audio">
+        <div class="section-label">Arquivo</div>
+
+        <div class="upload-area" id="uploadArea">
+          <input type="file" id="audioFileInput" accept="audio/*">
+          <div class="upload-icon">🎵</div>
+          <div class="upload-title">Clique ou arraste o áudio aqui</div>
+          <div class="upload-sub">MP3, WAV, M4A, OGG — até 25 MB</div>
+        </div>
+
+        <div class="file-badge" id="fileBadge" style="display:none">
+          <span class="file-badge-icon">🎧</span>
+          <span class="file-badge-name" id="selectedFileName">—</span>
+          <span class="file-badge-lang" id="detectedLanguage" style="display:none">—</span>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-secondary btn-full" id="transcribeButton">Transcrever</button>
+          <button class="btn btn-primary btn-full" id="transcribeAnalyzeButton">Transcrever + IA</button>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-label">Transcrição</div>
+
+        <div class="field">
+          <textarea id="transcriptionOutput" rows="8" placeholder="A transcrição aparecerá aqui após o processamento…"></textarea>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-ghost result-copy-btn" id="copyTranscriptBtn">Copiar transcrição</button>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-analysis">
+        <div class="section-label">Tipo de análise</div>
+
+        <div class="segmented">
+          <button class="seg-btn active" data-action="summary">Resumo</button>
+          <button class="seg-btn" data-action="detail">Detalhar</button>
+          <button class="seg-btn" data-action="explain">Explicar</button>
+          <button class="seg-btn" data-action="custom">Livre</button>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <span class="field-label">Modelo</span>
+            <input id="analysisModelInput" type="text" placeholder="qwen2.5:7b">
+          </div>
+          <div class="field">
+            <span class="field-label">Temperatura</span>
+            <input id="temperatureInput" type="number" min="0" max="2" step="0.1" value="0.2">
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Instrução da análise</span>
+          <textarea id="analysisInstructionInput" rows="3">Resuma a transcrição em português do Brasil, destacando pontos principais e próximos passos.</textarea>
+        </div>
+
+        <button class="btn btn-primary btn-full" id="analyzeButton">Gerar análise</button>
+
+        <hr class="divider">
+
+        <div class="section-label">Resultado</div>
+
+        <div id="analysisOutput" class="result-box placeholder">A resposta da IA aparecerá aqui…</div>
+
+        <button class="btn btn-ghost result-copy-btn" id="copyAnalysisBtn" style="align-self:flex-end">Copiar resultado</button>
+      </div>
+
+      <div class="tab-content" id="tab-voice">
+        <div class="section-label">Síntese de voz</div>
+
+        <div class="field">
+          <span class="field-label">Escolha a voz</span>
+          <div class="voice-grid" id="voiceGrid">
+            <div class="voice-loading">Carregando vozes…</div>
+          </div>
+          <select id="ttsVoiceSelect" style="display:none"></select>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Velocidade</span>
+          <div class="speed-row">
+            <input id="ttsSpeedRange" type="range" min="0.5" max="2" step="0.05" value="1" class="speed-slider">
+            <span id="ttsSpeedLabel" class="speed-value">1.0×</span>
+            <input id="ttsSpeedInput" type="number" min="0.5" max="2" step="0.05" value="1" style="display:none">
+          </div>
+        </div>
+
+        <div class="inline-note">💡 Na primeira vez que usar uma voz nova, o modelo é baixado automaticamente.</div>
+
+        <div class="field">
+          <span class="field-label">Texto para ler</span>
+          <textarea id="ttsTextInput" rows="7" placeholder="Digite algo para a IA ler em voz alta…"></textarea>
+        </div>
+
+        <div class="btn-group">
+          <button class="btn btn-secondary btn-full" id="ttsUseTranscriptButton">Usar transcrição</button>
+          <button class="btn btn-secondary btn-full" id="ttsUseAnalysisButton">Usar resultado</button>
+        </div>
+
+        <button class="btn btn-primary btn-full" id="ttsSpeakButton">Ler texto</button>
+
+        <hr class="divider">
+
+        <div class="section-label">Áudio gerado</div>
+
+        <div id="ttsResultMeta" class="result-box placeholder">O áudio gerado aparecerá aqui…</div>
+        <audio id="ttsAudioPlayer" class="audio-player" controls preload="none" style="display:none"></audio>
+        <a id="ttsDownloadLink" class="btn btn-secondary" href="#" download style="display:none">Baixar áudio</a>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
